@@ -2,140 +2,139 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Shield, Car, CreditCard, Lock } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { ReliabilityBadge } from "@/components/profile/ReliabilityBadge";
+import { ArrowLeft, Car, CreditCard } from "lucide-react";
+
+const MOCK_PROFILES: Record<string, any> = {
+  'mock-1': {
+    id: 'mock-1',
+    display_name: 'Chinedu Okeke',
+    phone: '+234 803 123 4567',
+    role: 'driver',
+    completion_rate: 98,
+    total_completed_rides: 142,
+    car_make_model: 'Toyota Corolla 2010',
+    plate_number: 'LSR-432-XY',
+    bank_name: 'GTBank',
+    account_number: '0123456789',
+    isContact: true,
+  },
+  'mock-2': {
+    id: 'mock-2',
+    display_name: 'Sarah Bello',
+    phone: '+234 806 987 6543',
+    role: 'rider',
+    isContact: false,
+  },
+  'mock-3': {
+    id: 'mock-3',
+    display_name: 'Emeka Nwosu',
+    phone: '+234 701 555 9999',
+    role: 'driver',
+    completion_rate: 84,
+    car_make_model: 'Honda Accord 2015',
+    plate_number: 'ABJ-123-EK',
+    bank_name: 'Zenith Bank',
+    account_number: '2109876543',
+    isContact: false,
+  },
+};
 
 export default function PublicProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const profileId = params.id;
   const [profile, setProfile] = useState<any>(null);
-  const [isContact, setIsContact] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadPublicProfile() {
-      // 1. Fetch public profile fields (assuming RLS allows read access to these)
-      // In dev mode, we just mock the data.
-      if (typeof window !== 'undefined' && localStorage.getItem('dev_bypass') === 'true') {
-        setProfile({
-          id: profileId,
-          display_name: "Chinedu",
-          phone: "+234 800 000 0000",
-          role: "driver",
-          completion_rate: 98,
-          total_completed_rides: 142,
-          car_make_model: "Toyota Corolla 2010",
-          plate_number: "LSR-432-XY",
-          bank_name: "GTBank",
-          account_number: "0123456789"
-        });
-        
-        // Mock checking if they are a saved contact
-        setIsContact(profileId === 'mock-1');
-        setLoading(false);
-        return;
-      }
+    const p = MOCK_PROFILES[params.id] || MOCK_PROFILES['mock-3'];
+    setProfile(p);
+  }, [params.id]);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data } = await supabase.from('profiles').select('*').eq('id', profileId).single();
-      setProfile(data);
+  if (!profile) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#111' }}>
+      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-      if (user) {
-        // 2. Check if they are a saved contact to unlock bank details
-        const { data: contactRow } = await supabase
-          .from('contacts')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('contact_id', profileId)
-          .single();
-        
-        setIsContact(!!contactRow);
-      }
-
-      setLoading(false);
-    }
-    loadPublicProfile();
-  }, [profileId]);
-
-  if (loading) return <div className="flex h-screen items-center justify-center"><div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div></div>;
-  if (!profile) return <div className="p-6 text-center text-slate-400">Profile not found.</div>;
+  const isDriver = profile.role === 'driver';
+  const isContact = profile.isContact;
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-900">
-      <div className="flex items-center p-4 border-b border-slate-800">
-        <button onClick={() => router.back()} className="p-2 mr-2 text-slate-300 hover:text-white rounded-full hover:bg-slate-800">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="flex flex-col min-h-screen" style={{ background: '#111111' }}>
+      <div className="flex items-center gap-3 px-4 py-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
+        <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-white/5">
+          <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <h1 className="text-lg font-semibold flex-1">Driver Profile</h1>
+        <h1 className="text-base font-semibold text-white">Profile</h1>
       </div>
 
       <div className="p-6">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 bg-slate-700 rounded-full flex items-center justify-center text-4xl font-bold text-teal-400 mb-4 shadow-xl border border-slate-600">
-            {profile.display_name?.charAt(0) || <User />}
+          <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mb-3" style={{ background: '#1e3a2f', color: '#22c55e' }}>
+            {profile.display_name?.charAt(0)}
           </div>
-          <h2 className="text-2xl font-bold mb-1">{profile.display_name}</h2>
-          <p className="text-slate-400 text-sm mb-3">{profile.phone}</p>
-          
-          {(profile.role === 'driver' || profile.role === 'both') && (
-            <ReliabilityBadge rate={profile.completion_rate} size="lg" />
+          <h2 className="text-xl font-bold text-white">{profile.display_name}</h2>
+          {isDriver && (
+            <span className="mt-1 text-xs px-3 py-1 rounded-full font-medium" style={{ background: '#14532d', color: '#4ade80' }}>
+              Driver • {profile.completion_rate}% Reliable
+            </span>
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="glass-panel p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-teal-500/10 rounded-full flex items-center justify-center">
-                <Shield className="w-5 h-5 text-teal-400" />
+        <div className="space-y-3">
+          <div className="rounded-2xl p-4" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6b7280' }}>Personal</p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs" style={{ color: '#6b7280' }}>Full Name</p>
+                <p className="text-sm font-semibold text-white mt-0.5">{profile.display_name}</p>
               </div>
               <div>
-                <p className="font-medium">Platform Trust</p>
-                <p className="text-xs text-slate-400">Completed rides</p>
+                <p className="text-xs" style={{ color: '#6b7280' }}>Phone</p>
+                <p className="text-sm font-semibold text-white mt-0.5">{profile.phone}</p>
               </div>
             </div>
-            <p className="text-xl font-bold">{profile.total_completed_rides}</p>
           </div>
 
-          {(profile.role === 'driver' || profile.role === 'both') && (
-            <div className="glass-panel p-4 space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-700/50">
-                <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
-                  <Car className="w-4 h-4 text-slate-300" />
+          {isDriver && (
+            <div className="rounded-2xl p-4" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Car className="w-4 h-4" style={{ color: '#6b7280' }} />
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Vehicle</p>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>Car</p>
+                  <p className="text-sm font-semibold text-white mt-0.5">{profile.car_make_model || 'Not specified'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">Vehicle</p>
-                  <p className="font-medium text-sm">{profile.car_make_model || "Not specified"}</p>
-                  <p className="font-mono text-xs text-teal-400">{profile.plate_number || "No plate provided"}</p>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>Plate Number</p>
+                  <p className="text-sm font-mono font-bold mt-0.5" style={{ color: '#22c55e' }}>{profile.plate_number || 'Not provided'}</p>
                 </div>
               </div>
+            </div>
+          )}
 
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-slate-300" />
+          {isDriver && isContact && (
+            <div className="rounded-2xl p-4" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="w-4 h-4" style={{ color: '#6b7280' }} />
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6b7280' }}>Payment Details</p>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>Bank</p>
+                  <p className="text-sm font-semibold text-white mt-0.5">{profile.bank_name}</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-slate-400">Payment Details</p>
-                  {isContact ? (
-                    <>
-                      <p className="font-medium text-sm">{profile.bank_name || "Bank not specified"}</p>
-                      <p className="font-mono text-xs tracking-wider">{profile.account_number || "No account number"}</p>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2 mt-1 text-amber-400 bg-amber-400/10 p-2 rounded-lg">
-                      <Lock className="w-3 h-3" />
-                      <p className="text-[10px] font-medium leading-tight">Hidden. Add as a contact to view bank details.</p>
-                    </div>
-                  )}
+                <div>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>Account Number</p>
+                  <p className="text-base font-mono font-bold tracking-widest mt-0.5" style={{ color: '#22c55e' }}>{profile.account_number}</p>
                 </div>
               </div>
             </div>
           )}
 
           {!isContact && (
-            <button className="btn-primary w-full py-3 mt-4">
-              Add to Contacts
+            <button className="w-full py-3 rounded-2xl font-semibold text-sm mt-2" style={{ background: '#22c55e', color: 'white' }}>
+              + Add to My Contacts
             </button>
           )}
         </div>

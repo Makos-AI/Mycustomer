@@ -2,115 +2,128 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, MessageCircle, MoreVertical } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { UserPlus } from "lucide-react";
+
+const MOCK_CHATS = [
+  { id: 'mock-1', name: 'Chinedu Okeke', lastMessage: 'I am on my way!', time: '09:14', unread: 2, isPending: false, avatar: 'C', completion_rate: 98 },
+  { id: 'system', name: 'MyCustomer', lastMessage: "Welcome to MyCustomer! Here's how to get started...", time: 'Yesterday', unread: 1, isPending: false, avatar: 'M', isSystem: true },
+];
+
+const MOCK_PENDING = [
+  { id: 'pending-1', name: 'Tunde Adeyemi', lastMessage: 'Tunde invited you as a customer', time: '10:22', isPending: true, avatar: 'T' },
+];
+
+const MOCK_CONTACTS = [
+  { id: 'mock-1', name: 'Chinedu Okeke', phone: '+234 803 123 4567', avatar: 'C' },
+  { id: 'mock-2', name: 'Sarah Bello', phone: '+234 806 987 6543', avatar: 'S' },
+];
 
 export default function ChatListPage() {
   const router = useRouter();
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [tab, setTab] = useState<'chats' | 'contacts'>('chats');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadConversations() {
-      if (typeof window !== 'undefined' && localStorage.getItem('dev_bypass') === 'true') {
-        setConversations([
-          {
-            id: 'mock-1',
-            nickname: 'Chinedu (Driver)',
-            contact_profile: { id: 'mock-1', display_name: 'Chinedu', completion_rate: 98 }
-          },
-          {
-            id: 'mock-2',
-            nickname: 'Sarah (Rider)',
-            contact_profile: { id: 'mock-2', display_name: 'Sarah', completion_rate: 100 }
-          }
-        ]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push("/auth");
-
-      // Simplified for MVP: Load contacts to simulate conversations list
-      const { data: contacts } = await supabase
-        .from('contacts')
-        .select(`
-          id,
-          nickname,
-          contact_profile:profiles!contacts_contact_id_fkey(id, display_name, avatar_url, completion_rate)
-        `)
-        .eq('user_id', user.id);
-        
-      setConversations(contacts || []);
+    if (typeof window !== 'undefined' && !localStorage.getItem('dev_bypass')) {
+      router.push('/auth');
+    } else {
       setLoading(false);
     }
-    loadConversations();
   }, [router]);
 
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center bg-black">
+      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* App Bar */}
-      <div className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-800 p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-cyan-400">
-          MyCustomer
-        </h1>
-        <div className="flex gap-4">
-          <Link href="/contacts/invite" className="text-slate-300 hover:text-white">
-            <UserPlus className="w-6 h-6" />
-          </Link>
-          <button className="text-slate-300 hover:text-white">
-            <MoreVertical className="w-6 h-6" />
+    <div className="flex flex-col h-screen" style={{ background: '#111111' }}>
+      <div className="px-4 pt-8 pb-2" style={{ background: '#111111' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-white">Chats</h1>
+          <button
+            onClick={() => router.push('/contacts/invite')}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: '#22c55e' }}>
+            <UserPlus className="w-5 h-5 text-white" />
           </button>
+        </div>
+
+        <div className="flex gap-6 border-b mb-1" style={{ borderColor: '#2a2a2a' }}>
+          {(['chats', 'contacts'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="pb-2 text-sm font-semibold capitalize transition-colors"
+              style={{
+                color: tab === t ? '#22c55e' : '#6b7280',
+                borderBottom: tab === t ? '2px solid #22c55e' : '2px solid transparent',
+                marginBottom: '-1px'
+              }}>
+              {t === 'chats' ? 'Chats' : 'Contacts'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className="text-center py-20 px-4">
-            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-teal-500" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">No conversations yet</h3>
-            <p className="text-slate-400 text-sm mb-6">
-              Invite your trusted drivers or riders to start booking.
-            </p>
-            <Link href="/contacts/invite" className="btn-primary inline-block">
-              Invite Contacts
-            </Link>
-          </div>
-        ) : (
-          conversations.map((conv) => (
-            <Link href={`/chat/${conv.contact_profile.id}`} key={conv.id}>
-              <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-800/50 transition-colors cursor-pointer">
-                <div className="w-12 h-12 bg-slate-700 rounded-full flex-shrink-0 flex items-center justify-center text-xl font-bold text-teal-400">
-                  {conv.contact_profile.display_name.charAt(0)}
-                </div>
+      <div className="flex-1 overflow-y-auto">
+        {tab === 'chats' && (
+          <div>
+            {MOCK_PENDING.map(item => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3" style={{ background: '#1a1a0a', borderBottom: '1px solid #2a2a1a' }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: '#854d0e', color: '#fef08a' }}>{item.avatar}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h3 className="font-semibold text-slate-100 truncate">
-                      {conv.nickname || conv.contact_profile.display_name}
-                    </h3>
-                    <span className="text-xs text-slate-500">Just now</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-slate-400 truncate">Tap to open chat</p>
-                    {conv.contact_profile.completion_rate && (
-                      <span className="text-[10px] bg-teal-500/20 text-teal-400 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {conv.contact_profile.completion_rate}% Reliable
-                      </span>
-                    )}
-                  </div>
+                  <p className="font-semibold text-white text-sm">{item.name}</p>
+                  <p className="text-xs truncate" style={{ color: '#a16207' }}>{item.lastMessage}</p>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <button className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#22c55e' }}>Accept</button>
+                  <button className="px-3 py-1 rounded-full text-xs font-semibold" style={{ border: '1px solid #4b5563', color: '#9ca3af' }}>Decline</button>
                 </div>
               </div>
-            </Link>
-          ))
+            ))}
+
+            {MOCK_CHATS.map(chat => (
+              <Link href={`/chat/${chat.id}`} key={chat.id}>
+                <div className="flex items-center gap-3 px-4 py-3 active:bg-white/5" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+                    style={{ background: chat.isSystem ? '#14532d' : '#1e3a2f', color: chat.isSystem ? '#4ade80' : '#22c55e' }}>
+                    {chat.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-0.5">
+                      <p className="font-semibold text-sm" style={{ color: '#f3f4f6' }}>{chat.name}</p>
+                      <span className="text-xs shrink-0 ml-2" style={{ color: chat.unread ? '#22c55e' : '#6b7280' }}>{chat.time}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs truncate" style={{ color: '#6b7280' }}>{chat.lastMessage}</p>
+                      {chat.unread > 0 && (
+                        <span className="ml-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: '#22c55e' }}>
+                          {chat.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {tab === 'contacts' && (
+          <div>
+            {MOCK_CONTACTS.map(contact => (
+              <Link href={`/profile/${contact.id}`} key={contact.id}>
+                <div className="flex items-center gap-3 px-4 py-3 active:bg-white/5" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: '#1e3a2f', color: '#22c55e' }}>{contact.avatar}</div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: '#f3f4f6' }}>{contact.name}</p>
+                    <p className="text-xs" style={{ color: '#6b7280' }}>{contact.phone}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </div>
