@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function ChatThreadPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -42,15 +43,17 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
         <button onClick={() => router.back()} className="p-2 -ml-2 text-slate-300 hover:text-white rounded-full hover:bg-slate-800">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center font-bold text-teal-400">
-          {contact?.display_name?.charAt(0)}
-        </div>
-        <div>
-          <h2 className="font-semibold">{contact?.display_name}</h2>
-          {contact?.completion_rate && (
-            <p className="text-xs text-teal-400">{contact.completion_rate}% Reliable</p>
-          )}
-        </div>
+        <Link href={`/profile/${contactId}`} className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center font-bold text-teal-400">
+            {contact?.display_name?.charAt(0)}
+          </div>
+          <div>
+            <h2 className="font-semibold">{contact?.display_name}</h2>
+            {contact?.completion_rate && (
+              <p className="text-xs text-teal-400">{contact.completion_rate}% Reliable</p>
+            )}
+          </div>
+        </Link>
       </div>
 
       {/* Messages */}

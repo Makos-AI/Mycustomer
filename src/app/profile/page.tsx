@@ -72,23 +72,55 @@ export default function OwnProfilePage() {
           </div>
 
           {(profile.role === 'driver' || profile.role === 'both') && (
-            <div className="glass-panel p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-emerald-400" />
+            <div className="space-y-4">
+              <div className="glass-panel p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">WhatsApp Live Location</p>
+                    <p className="text-xs text-slate-400">Attach to your rides</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">WhatsApp Live Location</p>
-                  <p className="text-xs text-slate-400">Attach to your rides</p>
+                <input 
+                  type="text" 
+                  defaultValue={profile.whatsapp_live_location_url}
+                  placeholder="https://maps.google.com/..."
+                  className="glass-input w-full text-sm mb-2"
+                />
+                <button className="text-xs text-teal-400 font-medium ml-1">Save Link</button>
+              </div>
+
+              <div className="glass-panel p-4">
+                <h3 className="font-medium mb-4">Vehicle Details</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Car Make & Model</label>
+                    <input type="text" defaultValue={profile.car_make_model} placeholder="e.g. Toyota Corolla" className="glass-input w-full text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Plate Number</label>
+                    <input type="text" defaultValue={profile.plate_number} placeholder="ABC-123-XY" className="glass-input w-full text-sm" />
+                  </div>
+                  <button className="text-xs text-teal-400 font-medium mt-2">Save Vehicle</button>
                 </div>
               </div>
-              <input 
-                type="text" 
-                defaultValue={profile.whatsapp_live_location_url}
-                placeholder="https://maps.google.com/..."
-                className="glass-input w-full text-sm mb-2"
-              />
-              <button className="text-xs text-teal-400 font-medium ml-1">Save Link</button>
+
+              <div className="glass-panel p-4">
+                <h3 className="font-medium mb-4">Payment Details (Hidden from strangers)</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Bank Name</label>
+                    <input type="text" defaultValue={profile.bank_name} placeholder="e.g. GTBank" className="glass-input w-full text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Account Number</label>
+                    <input type="text" defaultValue={profile.account_number} placeholder="0123456789" className="glass-input w-full text-sm" />
+                  </div>
+                  <button className="text-xs text-teal-400 font-medium mt-2">Save Payment Details</button>
+                </div>
+              </div>
             </div>
           )}
 

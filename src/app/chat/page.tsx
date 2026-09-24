@@ -13,6 +13,23 @@ export default function ChatListPage() {
 
   useEffect(() => {
     async function loadConversations() {
+      if (typeof window !== 'undefined' && localStorage.getItem('dev_bypass') === 'true') {
+        setConversations([
+          {
+            id: 'mock-1',
+            nickname: 'Chinedu (Driver)',
+            contact_profile: { id: 'mock-1', display_name: 'Chinedu', completion_rate: 98 }
+          },
+          {
+            id: 'mock-2',
+            nickname: 'Sarah (Rider)',
+            contact_profile: { id: 'mock-2', display_name: 'Sarah', completion_rate: 100 }
+          }
+        ]);
+        setLoading(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return router.push("/auth");
 

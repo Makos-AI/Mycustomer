@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     completion_rate NUMERIC(5, 2) DEFAULT 100.00,
     total_completed_rides INTEGER DEFAULT 0,
     total_scheduled_rides INTEGER DEFAULT 0,
+    account_number TEXT,
+    bank_name TEXT,
+    car_make_model TEXT,
+    plate_number TEXT,
     whatsapp_live_location_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
