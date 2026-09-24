@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { sendOTP } from "@/lib/supabase";
 
 export default function AuthPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [phone, setPhone] = useState("+234");
+  const [selectedRole, setSelectedRole] = useState<"passenger" | "driver">("passenger");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -14,18 +16,31 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    try {
-      sessionStorage.setItem("auth_phone", phone);
-      setTimeout(() => router.push("/auth/verify"), 800);
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP.");
-      setLoading(false);
+
+    if (activeTab === "signup") {
+      sessionStorage.setItem("signup_role", selectedRole);
     }
+    sessionStorage.setItem("auth_phone", phone);
+
+    const { error: otpError } = await sendOTP(phone);
+
+    if (otpError) {
+      setError(otpError.message || "Failed to send OTP. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/auth/verify");
   };
 
   const handleDevBypass = () => {
     localStorage.setItem("dev_bypass", "true");
     router.push("/chat");
+  };
+
+  const handleRoleSelect = (role: "passenger" | "driver") => {
+    setSelectedRole(role);
+    sessionStorage.setItem("signup_role", role);
   };
 
   return (
@@ -41,13 +56,25 @@ export default function AuthPage() {
 
         <div className="auth-card">
           <div className="tab-container mb-6">
-            <button className={`tab-btn ${activeTab === 'login' ? 'active' : ''}`} onClick={() => setActiveTab('login')}>Login</button>
-            <button className={`tab-btn ${activeTab === 'signup' ? 'active' : ''}`} onClick={() => setActiveTab('signup')}>Sign Up</button>
+            <button
+              className={`tab-btn ${activeTab === "login" ? "active" : ""}`}
+              onClick={() => setActiveTab("login")}
+            >
+              Login
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "signup" ? "active" : ""}`}
+              onClick={() => setActiveTab("signup")}
+            >
+              Sign Up
+            </button>
           </div>
 
           <form onSubmit={handleSendOTP} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Phone Number
+              </label>
               <input
                 type="tel"
                 value={phone}
@@ -59,17 +86,33 @@ export default function AuthPage() {
               {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
 
-            {activeTab === 'signup' && (
+            {activeTab === "signup" && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">I am a</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  I am a
+                </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => sessionStorage.setItem('signup_role', 'passenger')}
-                    className="py-3 rounded-xl border-2 text-sm font-semibold transition-colors border-green-500 text-green-600 bg-green-50">
-                    🧑 Passenger
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSelect("passenger")}
+                    className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      selectedRole === "passenger"
+                        ? "border-green-500 text-green-600 bg-green-50"
+                        : "border-slate-200 text-slate-500"
+                    }`}
+                  >
+                    Passenger
                   </button>
-                  <button type="button" onClick={() => sessionStorage.setItem('signup_role', 'driver')}
-                    className="py-3 rounded-xl border-2 text-sm font-semibold transition-colors border-slate-200 text-slate-600">
-                    🚗 Driver
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSelect("driver")}
+                    className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      selectedRole === "driver"
+                        ? "border-green-500 text-green-600 bg-green-50"
+                        : "border-slate-200 text-slate-500"
+                    }`}
+                  >
+                    Driver
                   </button>
                 </div>
               </div>
@@ -81,10 +124,12 @@ export default function AuthPage() {
           </form>
         </div>
 
-        {process.env.NODE_ENV === 'development' && (
-          <button onClick={handleDevBypass}
-            className="mt-4 w-full py-2 border-2 border-dashed border-green-400 text-green-600 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors">
-            🛠 Dev Mode: Skip to Chat
+        {process.env.NODE_ENV === "development" && (
+          <button
+            onClick={handleDevBypass}
+            className="mt-4 w-full py-2 border-2 border-dashed border-green-400 text-green-600 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors"
+          >
+            Dev Mode: Skip to Chat
           </button>
         )}
       </div>
