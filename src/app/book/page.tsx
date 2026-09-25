@@ -290,6 +290,39 @@ function BookRideContent() {
                     className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-black"
                   />
                 </div>
+
+                {/* RECURRING RIDE TOGGLE */}
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-semibold text-gray-900">Repeat Ride</span>
+                    <input 
+                      type="checkbox" 
+                      checked={showRepeat}
+                      onChange={(e) => setShowRepeat(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black bg-gray-50"
+                    />
+                  </label>
+
+                  {showRepeat && (
+                    <div className="mt-4 flex justify-between animate-fade-in">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                        const isSelected = draft.recurrenceDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            onClick={() => toggleDay(day)}
+                            className={`w-10 h-10 rounded-full text-xs font-bold transition-colors ${
+                              isSelected ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-400'
+                            }`}
+                          >
+                            {day.charAt(0)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
               </div>
 
             </div>
@@ -314,7 +347,7 @@ function BookRideContent() {
               disabled={loadingRoute}
               className="w-full bg-[#a3e635] text-black font-bold py-4 rounded-2xl text-lg active:bg-[#84cc16] transition-colors shadow-sm"
             >
-              Find drivers
+              Schedule Ride
             </button>
           )}
         </div>

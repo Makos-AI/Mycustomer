@@ -28,16 +28,7 @@ export function MapView({ pickupLat, pickupLng, dropoffLat, dropoffLng }: MapVie
           center: { lat: 6.5244, lng: 3.3792 }, // Lagos default
           zoom: 12,
           disableDefaultUI: true,
-          styles: [
-            { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-            { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-            { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-            {
-              featureType: "water",
-              elementType: "geometry",
-              stylers: [{ color: "#17263c" }],
-            },
-          ]
+          // Standard Google Maps light mode styling is default, so no custom styles needed
         });
         setMap(initialMap);
       }
@@ -46,11 +37,11 @@ export function MapView({ pickupLat, pickupLng, dropoffLat, dropoffLng }: MapVie
   }, [map]);
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden bg-slate-800">
+    <div className="w-full h-full relative overflow-hidden bg-[#e5e7eb]">
       <div ref={mapRef} className="w-full h-full" />
       {(!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-          <p className="text-slate-400 text-sm">Map Preview (Requires API Key)</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/70 backdrop-blur-sm">
+          <p className="text-gray-500 font-semibold text-sm">Map Preview (Requires API Key)</p>
         </div>
       )}
     </div>
