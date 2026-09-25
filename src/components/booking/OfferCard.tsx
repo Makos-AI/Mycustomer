@@ -18,7 +18,7 @@ export function OfferCard({ booking, viewerRole, onAccept, onDecline, onCounter 
 
   // Format repeats if recurring
   let repeatBadge = null;
-  if (booking.isRecurring && booking.recurrenceDays.length > 0) {
+  if (booking.isRecurring && booking.recurrenceDays?.length > 0) {
     repeatBadge = (
       <div className="bg-purple-500/20 text-purple-400 text-[10px] uppercase font-bold px-2 py-1 rounded-full w-max mt-2 border border-purple-500/30">
         Repeats: {booking.recurrenceDays.join(', ')}
@@ -28,7 +28,7 @@ export function OfferCard({ booking, viewerRole, onAccept, onDecline, onCounter 
 
   // Format modifiers if any
   let modifierList = null;
-  if (booking.modifiers.length > 0) {
+  if (booking.modifiers?.length > 0) {
     modifierList = (
       <div className="flex flex-wrap gap-1 mt-2">
         {booking.modifiers.map(m => (

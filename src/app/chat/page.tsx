@@ -9,29 +9,48 @@ import { useMockDb } from "@/lib/mock-db";
 export default function ChatListPage() {
   const router = useRouter();
   const [tab, setTab] = useState<'chats' | 'contacts'>('chats');
-  const [loading, setLoading] = useState(true);
 
-  const { db, acceptInvite, declineInvite } = useMockDb();
-
-  // Convert object to arrays and categorize
-  const allProfiles = Object.values(db);
-  const pendingInvites = allProfiles.filter(p => p.isPending);
-  const regularChats = allProfiles.filter(p => !p.isPending && p.messages.length > 0);
-  const contacts = allProfiles.filter(p => p.isContact);
+  const { db, isLoaded, acceptInvite, declineInvite } = useMockDb();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !localStorage.getItem('dev_bypass')) {
+    // Only redirect if NOT in dev bypass AND page has loaded
+    const isBypass = typeof window !== 'undefined' && localStorage.getItem('dev_bypass') === 'true';
+    if (!isBypass) {
+      // In prod we'd check Supabase session here. For now, redirect to auth.
       router.push('/auth');
-    } else {
-      setLoading(false);
     }
   }, [router]);
 
-  if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-black">
-      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  // Convert object to arrays and categorize — with defensive checks
+  const allProfiles = Object.values(db);
+  const pendingInvites = allProfiles.filter(p => p.isPending);
+  const regularChats = allProfiles.filter(p => !p.isPending && (p.messages?.length ?? 0) > 0);
+  const contacts = allProfiles.filter(p => p.isContact);
+
+  // Show skeleton while loading from localStorage
+  if (!isLoaded) {
+    return (
+      <div className="flex flex-col h-screen" style={{ background: '#111111' }}>
+        <div className="px-4 pt-8 pb-4">
+          <div className="flex items-center justify-between mb-6">
+            <div className="w-24 h-7 bg-slate-800 rounded-lg animate-pulse" />
+            <div className="w-10 h-10 bg-slate-800 rounded-full animate-pulse" />
+          </div>
+        </div>
+        <div className="px-4 space-y-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-slate-800 animate-pulse shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="w-32 h-3 bg-slate-800 rounded animate-pulse" />
+                <div className="w-48 h-3 bg-slate-800 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen" style={{ background: '#111111' }}>
@@ -61,7 +80,7 @@ export default function ChatListPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-20">
         {tab === 'chats' && (
           <div>
             {pendingInvites.map(item => (
@@ -69,7 +88,7 @@ export default function ChatListPage() {
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: '#854d0e', color: '#fef08a' }}>{item.avatar}</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm">{item.display_name}</p>
-                  <p className="text-xs truncate" style={{ color: '#a16207' }}>{item.display_name.split(' ')[0]} invited you as a customer</p>
+                  <p className="text-xs truncate" style={{ color: '#a16207' }}>{item.display_name.split(' ')[0]} wants to be your driver</p>
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   <button onClick={() => acceptInvite(item.id)} className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#22c55e' }}>Accept</button>
@@ -79,7 +98,7 @@ export default function ChatListPage() {
             ))}
 
             {regularChats.map(chat => {
-              const lastMessage = chat.messages[chat.messages.length - 1];
+              const lastMessage = chat.messages?.[chat.messages.length - 1];
               return (
                 <Link href={`/chat/${chat.id}`} key={chat.id}>
                   <div className="flex items-center gap-3 px-4 py-3 active:bg-white/5" style={{ borderBottom: '1px solid #1a1a1a' }}>
@@ -96,9 +115,9 @@ export default function ChatListPage() {
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-xs truncate" style={{ color: '#6b7280' }}>
-                          {lastMessage?.content || ''}
+                          {lastMessage?.content?.split('\n')[0] || ''}
                         </p>
-                        {chat.unread > 0 && (
+                        {(chat.unread ?? 0) > 0 && (
                           <span className="ml-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: '#22c55e' }}>
                             {chat.unread}
                           </span>
@@ -120,7 +139,7 @@ export default function ChatListPage() {
                   <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: '#1e3a2f', color: '#22c55e' }}>{contact.avatar}</div>
                   <div>
                     <p className="font-semibold text-sm" style={{ color: '#f3f4f6' }}>{contact.display_name}</p>
-                    <p className="text-xs" style={{ color: '#6b7280' }}>{contact.phone}</p>
+                    <p className="text-xs" style={{ color: '#6b7280' }}>{contact.role === 'driver' ? `Driver · ${contact.phone}` : contact.phone}</p>
                   </div>
                 </div>
               </Link>

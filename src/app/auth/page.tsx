@@ -35,7 +35,16 @@ export default function AuthPage() {
 
   const handleDevBypass = () => {
     localStorage.setItem("dev_bypass", "true");
+    // Clear any stale data so seed data loads fresh
+    localStorage.removeItem("mycustomer_mock_db");
+    localStorage.removeItem("mock_bookings");
     router.push("/chat");
+  };
+
+  const handleResetDemo = () => {
+    localStorage.removeItem("mycustomer_mock_db");
+    localStorage.removeItem("mock_bookings");
+    alert("Demo data reset! Click 'Dev Mode: Skip to Chat' to reload.");
   };
 
   const handleRoleSelect = (role: "passenger" | "driver") => {
@@ -125,12 +134,20 @@ export default function AuthPage() {
         </div>
 
         {process.env.NODE_ENV === "development" && (
-          <button
-            onClick={handleDevBypass}
-            className="mt-4 w-full py-2 border-2 border-dashed border-green-400 text-green-600 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors"
-          >
-            Dev Mode: Skip to Chat
-          </button>
+          <div className="mt-4 space-y-2">
+            <button
+              onClick={handleDevBypass}
+              className="w-full py-2 border-2 border-dashed border-green-400 text-green-600 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors"
+            >
+              Dev Mode: Skip to Chat
+            </button>
+            <button
+              onClick={handleResetDemo}
+              className="w-full py-2 border border-dashed border-slate-300 text-slate-400 rounded-xl text-xs hover:bg-slate-50 transition-colors"
+            >
+              ↺ Reset Demo Data
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -15,7 +15,7 @@ export function BottomNav() {
   if (!showNav) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-[#111111] border-t border-[#1f2937] flex items-center justify-around z-50">
+    <div className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md h-16 bg-[#111111] border-t border-[#1f2937] flex items-center justify-around z-50">
       <Link href="/chat" className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isChat ? 'text-[#22c55e]' : 'text-slate-500 hover:text-slate-300'}`}>
         <div className="relative">
           <MessageCircle className="w-6 h-6 mb-1" />

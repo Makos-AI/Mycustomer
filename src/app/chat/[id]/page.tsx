@@ -13,56 +13,82 @@ import { NegotiationPanel } from "@/components/negotiation/NegotiationPanel";
 export default function ChatThreadPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const contactId = params.id;
-  
-  const { db, sendMessage, markAsRead } = useMockDb();
+
+  const { db, isLoaded, sendMessage, markAsRead } = useMockDb();
   const contact = db[contactId];
 
-  const { 
-    bookings, 
-    acceptBooking, 
-    declineBooking, 
-    counterBooking, 
-    acceptCounter, 
-    declineCounter 
+  const {
+    bookings,
+    acceptBooking,
+    declineBooking,
+    counterBooking,
+    acceptCounter,
+    declineCounter
   } = useMockBookings();
-  
-  // Filter bookings for this specific contact
+
   const contactBookings = bookings.filter(b => b.driverContactId === contactId);
 
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showDotMenu, setShowDotMenu] = useState(false);
-
-  // Negotiation panel state
   const [negotiationBooking, setNegotiationBooking] = useState<MockBooking | null>(null);
 
   useEffect(() => {
-    if (contact && contact.unread > 0) {
-      markAsRead(contactId);
-    }
+    if (contact && contact.unread > 0) markAsRead(contactId);
   }, [contactId, contact, markAsRead]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [contact?.messages, contactBookings.length]);
 
-  const handleSend = (e: React.FormEvent) => { 
-    e.preventDefault(); 
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!input.trim()) return;
     sendMessage(contactId, input);
-    setInput(""); 
+    setInput("");
   };
 
+  // ── Skeleton while localStorage hydrates ────────────────────────────────────
+  if (!isLoaded) {
+    return (
+      <div className="flex flex-col h-screen" style={{ background: '#0d1117' }}>
+        <div className="flex items-center gap-3 px-3 py-3 shrink-0" style={{ background: '#111827', borderBottom: '1px solid #1f2937' }}>
+          <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
+          <div className="flex-1 space-y-1.5">
+            <div className="w-32 h-3 bg-slate-800 rounded animate-pulse" />
+            <div className="w-20 h-2 bg-slate-800 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex-1 px-4 py-6 space-y-4">
+          {[80, 56, 72, 48, 64].map((w, i) => (
+            <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+              <div className={`h-10 rounded-2xl animate-pulse bg-slate-800`} style={{ width: `${w}%` }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Contact genuinely not found after full load ──────────────────────────────
   if (!contact) return (
-    <div className="flex h-screen items-center justify-center bg-black">
-      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col h-screen items-center justify-center bg-[#0d1117] text-white px-4">
+      <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+        <AlertTriangle className="w-8 h-8 text-amber-500" />
+      </div>
+      <h2 className="text-xl font-bold mb-2">Contact Not Found</h2>
+      <p className="text-slate-400 text-center text-sm mb-6">
+        We couldn't find this contact. The local database may have been cleared.
+      </p>
+      <button onClick={() => router.push('/chat')} className="bg-teal-500 px-6 py-3 rounded-full font-bold">
+        Return to Chats
+      </button>
     </div>
   );
 
-  // Determine viewer role. If contact is driver, we are rider.
-  const viewerRole = contact.role === 'driver' ? 'rider' : 'driver';
+  const isDriverContact = contact.role === 'driver';
+  const viewerRole = isDriverContact ? 'rider' : 'driver';
 
   return (
     <div className="flex flex-col h-screen" style={{ background: '#0d1117' }}>
@@ -87,22 +113,24 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
           <a href={`tel:${contact.phone}`} className="p-2 rounded-full hover:bg-white/10 text-slate-400">
             <Phone className="w-4 h-4" />
           </a>
-          <button 
-            onClick={() => { setShowDotMenu(!showDotMenu); setShowPlusMenu(false); }} 
+          <button
+            onClick={() => { setShowDotMenu(!showDotMenu); setShowPlusMenu(false); }}
             className="p-2 rounded-full hover:bg-white/10 text-slate-400">
             <MoreVertical className="w-4 h-4" />
           </button>
-          
-          {/* Triple Dot Dropdown */}
+
           {showDotMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg border animate-fade-in" style={{ background: '#1f2937', borderColor: '#374151' }}>
               <div className="p-1">
                 <Link href={`/profile/${contactId}`}>
                   <button className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 rounded-lg">View Profile</button>
                 </Link>
-                <button onClick={() => router.push(`/book?driverId=${contactId}`)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/5 rounded-lg text-slate-300">
-                  <Car className="w-4 h-4" /> Schedule Ride
-                </button>
+                {/* Only show Schedule Ride for drivers */}
+                {isDriverContact && (
+                  <button onClick={() => { router.push(`/book?driverId=${contactId}`); setShowDotMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/5 rounded-lg text-slate-300">
+                    <Car className="w-4 h-4" /> Schedule Ride
+                  </button>
+                )}
                 <button onClick={() => { alert('Chat cleared!'); setShowDotMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/5 rounded-lg text-slate-300">
                   <Trash2 className="w-4 h-4" /> Clear Chat
                 </button>
@@ -119,12 +147,12 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Messages */}
-      <div 
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-2 relative z-0" 
+      <div
+        className="flex-1 overflow-y-auto px-3 py-4 space-y-2 relative z-0"
         onClick={() => { setShowDotMenu(false); setShowPlusMenu(false); }}
         style={{ backgroundImage: 'url(/chatbackground.avif)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#0d1117', backgroundBlendMode: 'overlay' }}
       >
-        {contact.messages.map(msg => (
+        {contact.messages?.map(msg => (
           <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
             <div
               className="max-w-[80%] rounded-2xl px-3 py-2"
@@ -137,12 +165,12 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         ))}
-        
-        {/* Render Bookings/Offer Cards inline */}
+
+        {/* Offer Cards interleaved */}
         {contactBookings.map(booking => (
           <div key={booking.id} className="flex justify-center w-full my-2">
-            <OfferCard 
-              booking={booking} 
+            <OfferCard
+              booking={booking}
               viewerRole={viewerRole}
               onAccept={() => {
                 if (booking.status === 'proposed') acceptBooking(booking.id);
@@ -156,15 +184,14 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
             />
           </div>
         ))}
-        
+
         <div ref={bottomRef} />
       </div>
 
       {/* Input Area */}
       <div className="shrink-0 relative z-10" style={{ background: '#111827', borderTop: '1px solid #1f2937' }}>
         <TemplateBar onSend={(text) => sendMessage(contactId, text)} />
-        
-        {/* Plus Menu Slide Up */}
+
         {showPlusMenu && (
           <div className="px-4 py-4 grid grid-cols-3 gap-4 border-b animate-slide-in" style={{ borderColor: '#1f2937', background: '#111827' }}>
             <button onClick={() => { alert('Location sharing coming soon!'); setShowPlusMenu(false); }} className="flex flex-col items-center gap-2">
@@ -179,18 +206,21 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
               </div>
               <span className="text-xs text-slate-300">Gallery</span>
             </button>
-            <button onClick={() => { router.push(`/book?driverId=${contactId}`); }} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: '#16a34a' }}>
-                <Car className="w-6 h-6" />
-              </div>
-              <span className="text-xs text-slate-300">Book Ride</span>
-            </button>
+            {/* Book Ride only shows for driver contacts */}
+            {isDriverContact && (
+              <button onClick={() => { router.push(`/book?driverId=${contactId}`); }} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: '#16a34a' }}>
+                  <Car className="w-6 h-6" />
+                </div>
+                <span className="text-xs text-slate-300">Book Ride</span>
+              </button>
+            )}
           </div>
         )}
 
         <form onSubmit={handleSend} className="flex items-center gap-2 px-3 py-2">
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setShowPlusMenu(!showPlusMenu); setShowDotMenu(false); }}
             className={`p-2 transition-colors ${showPlusMenu ? 'text-white bg-white/10 rounded-full' : 'text-slate-400 hover:text-white'}`}>
             <Plus className="w-5 h-5" />
