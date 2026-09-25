@@ -14,7 +14,7 @@ const IS_DEV =
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id: contactId } = use(params);
-  const { db } = useMockDb();
+  const { db, isLoaded } = useMockDb();
   
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +22,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function load() {
       if (IS_DEV) {
+        if (!isLoaded) return; // Wait for localStorage to hydrate
         setProfile(db[contactId] ?? db["mock-3"]);
         setLoading(false);
         return;
@@ -37,7 +38,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       setLoading(false);
     }
     load();
-  }, [contactId, db]);
+  }, [contactId, db, isLoaded]);
 
   if (loading)
     return (

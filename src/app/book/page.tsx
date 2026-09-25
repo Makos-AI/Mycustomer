@@ -333,6 +333,15 @@ function BookRideContent() {
 
       {/* FIXED ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 max-w-md mx-auto">
+        {step === 'location' && (
+          <button 
+            onClick={() => selectDestination(searchQuery || "Custom Location")}
+            disabled={!searchQuery.trim()}
+            className="w-full bg-teal-500 text-white font-bold py-4 rounded-full text-lg disabled:opacity-50 active:bg-teal-600 transition-colors"
+          >
+            Continue
+          </button>
+        )}
         {step === 'route' && (
           <button 
             onClick={() => setStep('configure')}
