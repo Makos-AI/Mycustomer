@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Car, CreditCard } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,8 +11,9 @@ const IS_DEV =
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
 
-export default function PublicProfilePage({ params }: { params: { id: string } }) {
+export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id: contactId } = use(params);
   const { db } = useMockDb();
   
   const [profile, setProfile] = useState<any>(null);
@@ -21,14 +22,14 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
   useEffect(() => {
     async function load() {
       if (IS_DEV) {
-        setProfile(db[params.id] ?? db["mock-3"]);
+        setProfile(db[contactId] ?? db["mock-3"]);
         setLoading(false);
         return;
       }
 
       // Use the RLS-enforced function — returns bank_name/account_number only if contact
       const { data, error } = await supabase
-        .rpc("get_driver_profile", { target_id: params.id })
+        .rpc("get_driver_profile", { target_id: contactId })
         .single();
 
       if (error) console.error(error);
@@ -36,7 +37,7 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
       setLoading(false);
     }
     load();
-  }, [params.id, db]);
+  }, [contactId, db]);
 
   if (loading)
     return (

@@ -216,9 +216,14 @@ export function getMockDb(): Record<string, ContactProfile> {
   const stored = localStorage.getItem('mycustomer_mock_db');
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // If it's completely empty (e.g. from an old bug), re-seed
+      if (Object.keys(parsed).length === 0) {
+        throw new Error('Empty database');
+      }
+      return parsed;
     } catch {
-      // Corrupted storage — reset
+      // Corrupted storage or empty — reset
       localStorage.removeItem('mycustomer_mock_db');
     }
   }

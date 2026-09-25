@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Phone, MoreVertical, Plus, Send, Mic, MapPin, Image as ImageIcon, Car, Trash2, Ban, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -10,9 +10,9 @@ import { useMockBookings, MockBooking } from "@/lib/mock-bookings";
 import { OfferCard } from "@/components/booking/OfferCard";
 import { NegotiationPanel } from "@/components/negotiation/NegotiationPanel";
 
-export default function ChatThreadPage({ params }: { params: { id: string } }) {
+export default function ChatThreadPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const contactId = params.id;
+  const { id: contactId } = use(params);
 
   const { db, isLoaded, sendMessage, markAsRead } = useMockDb();
   const contact = db[contactId];
