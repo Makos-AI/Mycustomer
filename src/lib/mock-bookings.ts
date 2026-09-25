@@ -40,27 +40,33 @@ export type MockBooking = {
 // SEED BOOKINGS — realistic workflow data, week of Sept 22–28 2026
 // Today is Friday Sept 25, 2026
 // ─────────────────────────────────────────────────────────────────────────────
-const makeISO = (dateStr: string, time: string) =>
-  new Date(`${dateStr}T${time}:00+01:00`).toISOString();
+const getRelativeDateISO = (daysOffset: number, timeStr: string) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  const [hours, minutes] = timeStr.split(':');
+  date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+  return date.toISOString();
+};
 
-// Recurring Mon-Fri commute with Chinedu (negotiated up from ₦2500 to ₦2800)
+const getRelativeDateStr = (daysOffset: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  return date.toISOString().split('T')[0];
+};
+
 const commuteInstances: MockBookingInstance[] = [
-  // Mon–Thu are completed; Fri is today (still accepted/ongoing)
-  { id: 'bk-commute-inst-0', bookingId: 'bk-commute', scheduledDate: '2026-09-22', startTime: makeISO('2026-09-22','07:00'), endTime: makeISO('2026-09-22','08:05'), status: 'accepted' },
-  { id: 'bk-commute-inst-1', bookingId: 'bk-commute', scheduledDate: '2026-09-23', startTime: makeISO('2026-09-23','07:00'), endTime: makeISO('2026-09-23','08:10'), status: 'accepted' },
-  { id: 'bk-commute-inst-2', bookingId: 'bk-commute', scheduledDate: '2026-09-24', startTime: makeISO('2026-09-24','07:00'), endTime: makeISO('2026-09-24','08:20'), status: 'accepted' },
-  { id: 'bk-commute-inst-3', bookingId: 'bk-commute', scheduledDate: '2026-09-25', startTime: makeISO('2026-09-25','07:00'), endTime: makeISO('2026-09-25','08:05'), status: 'accepted' },
-  // Next week
-  { id: 'bk-commute-inst-4', bookingId: 'bk-commute', scheduledDate: '2026-09-28', startTime: makeISO('2026-09-28','07:00'), endTime: makeISO('2026-09-28','08:05'), status: 'accepted' },
-  { id: 'bk-commute-inst-5', bookingId: 'bk-commute', scheduledDate: '2026-09-29', startTime: makeISO('2026-09-29','07:00'), endTime: makeISO('2026-09-29','08:05'), status: 'accepted' },
-  { id: 'bk-commute-inst-6', bookingId: 'bk-commute', scheduledDate: '2026-09-30', startTime: makeISO('2026-09-30','07:00'), endTime: makeISO('2026-09-30','08:05'), status: 'accepted' },
-  { id: 'bk-commute-inst-7', bookingId: 'bk-commute', scheduledDate: '2026-10-01', startTime: makeISO('2026-10-01','07:00'), endTime: makeISO('2026-10-01','08:05'), status: 'accepted' },
-  { id: 'bk-commute-inst-8', bookingId: 'bk-commute', scheduledDate: '2026-10-02', startTime: makeISO('2026-10-02','07:00'), endTime: makeISO('2026-10-02','08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-0', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(-3), startTime: getRelativeDateISO(-3,'07:00'), endTime: getRelativeDateISO(-3,'08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-1', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(-2), startTime: getRelativeDateISO(-2,'07:00'), endTime: getRelativeDateISO(-2,'08:10'), status: 'accepted' },
+  { id: 'bk-commute-inst-2', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(-1), startTime: getRelativeDateISO(-1,'07:00'), endTime: getRelativeDateISO(-1,'08:20'), status: 'accepted' },
+  { id: 'bk-commute-inst-3', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(0), startTime: getRelativeDateISO(0,'07:00'), endTime: getRelativeDateISO(0,'08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-4', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(1), startTime: getRelativeDateISO(1,'07:00'), endTime: getRelativeDateISO(1,'08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-5', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(2), startTime: getRelativeDateISO(2,'07:00'), endTime: getRelativeDateISO(2,'08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-6', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(3), startTime: getRelativeDateISO(3,'07:00'), endTime: getRelativeDateISO(3,'08:05'), status: 'accepted' },
+  { id: 'bk-commute-inst-7', bookingId: 'bk-commute', scheduledDate: getRelativeDateStr(4), startTime: getRelativeDateISO(4,'07:00'), endTime: getRelativeDateISO(4,'08:05'), status: 'accepted' },
 ];
 
 const INITIAL_BOOKINGS: Record<string, MockBooking> = {
 
-  // ── 1. RECURRING Mon-Fri commute with Chinedu (counter-accepted at ₦2800) ─
   'bk-commute': {
     id: 'bk-commute',
     driverContactId: 'mock-1',
@@ -75,42 +81,17 @@ const INITIAL_BOOKINGS: Record<string, MockBooking> = {
     counterNote: 'Fuel prices have increased and 3rd Mainland traffic adds 20+ mins most mornings',
     counterTags: ['Severe Traffic'],
     modifiers: ['AC On'],
-    startTime: makeISO('2026-09-22', '07:00'),
-    endTime: makeISO('2026-09-22', '08:05'),
+    startTime: getRelativeDateISO(-3, '07:00'),
+    endTime: getRelativeDateISO(-3, '08:05'),
     status: 'accepted',
     isRecurring: true,
     recurrenceDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     instances: commuteInstances,
-    expiresAt: makeISO('2026-09-23', '07:00'),
+    expiresAt: getRelativeDateISO(-2, '07:00'),
   },
 
-  // ── 2. COMPLETED — Emeka covers Thursday morning (one-off, accepted) ───────
-  'bk-emeka-thu-morning': {
-    id: 'bk-emeka-thu-morning',
-    driverContactId: 'mock-3',
-    riderName: 'Me',
-    pickup: 'Lekki Phase 1, Gate B, Lagos',
-    dropoff: 'Eko Atlantic, Victoria Island, Lagos',
-    distanceKm: 12.5,
-    durationMin: 70,
-    baselineFare: 2800,
-    proposedFare: 2900,
-    counterFare: null,
-    counterNote: null,
-    counterTags: [],
-    modifiers: ['AC On'],
-    startTime: makeISO('2026-09-24', '07:00'),
-    endTime: makeISO('2026-09-24', '08:10'),
-    status: 'completed',
-    isRecurring: false,
-    recurrenceDays: [],
-    instances: [],
-    expiresAt: makeISO('2026-09-25', '07:00'),
-  },
-
-  // ── 3. COMPLETED — Emeka, airport night pickup (countered ₦8500→₦8000) ────
-  'bk-emeka-airport': {
-    id: 'bk-emeka-airport',
+  'bk-emeka-past': {
+    id: 'bk-emeka-past',
     driverContactId: 'mock-3',
     riderName: 'Me',
     pickup: 'Murtala Muhammed International Airport, Ikeja, Lagos',
@@ -120,21 +101,43 @@ const INITIAL_BOOKINGS: Record<string, MockBooking> = {
     baselineFare: 7500,
     proposedFare: 7500,
     counterFare: 8000,
-    counterNote: 'Airport queue at night can be over 1 hour, fuel and late hour charge applies',
-    counterTags: ['Night Surcharge', 'Long Queue at Fuel Station'],
+    counterNote: 'Airport queue at night can be over 1 hour',
+    counterTags: ['Night Surcharge'],
     modifiers: ['AC On', 'Night Ride'],
-    startTime: makeISO('2026-09-24', '22:45'),
-    endTime: makeISO('2026-09-25', '00:05'),
+    startTime: getRelativeDateISO(-2, '22:45'),
+    endTime: getRelativeDateISO(-1, '00:05'),
     status: 'completed',
     isRecurring: false,
     recurrenceDays: [],
     instances: [],
-    expiresAt: makeISO('2026-09-25', '22:45'),
+    expiresAt: getRelativeDateISO(-1, '22:45'),
   },
 
-  // ── 4. ACCEPTED — Saturday Civic Centre ride with Chinedu ────────────────
-  'bk-chinedu-saturday': {
-    id: 'bk-chinedu-saturday',
+  'bk-sarah-past': {
+    id: 'bk-sarah-past',
+    driverContactId: 'mock-2',
+    riderName: 'Me',
+    pickup: 'Ikeja City Mall, Lagos',
+    dropoff: 'Yaba, Lagos',
+    distanceKm: 14.2,
+    durationMin: 45,
+    baselineFare: 3200,
+    proposedFare: 3500,
+    counterFare: null,
+    counterNote: null,
+    counterTags: [],
+    modifiers: ['Quiet Ride'],
+    startTime: getRelativeDateISO(-1, '14:30'),
+    endTime: getRelativeDateISO(-1, '15:15'),
+    status: 'completed',
+    isRecurring: false,
+    recurrenceDays: [],
+    instances: [],
+    expiresAt: getRelativeDateISO(0, '14:30'),
+  },
+
+  'bk-chinedu-future': {
+    id: 'bk-chinedu-future',
     driverContactId: 'mock-1',
     riderName: 'Me',
     pickup: 'Lekki Phase 1, Gate B, Lagos',
@@ -147,16 +150,38 @@ const INITIAL_BOOKINGS: Record<string, MockBooking> = {
     counterNote: null,
     counterTags: [],
     modifiers: ['AC On'],
-    startTime: makeISO('2026-09-27', '09:30'),
-    endTime: makeISO('2026-09-27', '10:25'),
+    startTime: getRelativeDateISO(1, '09:30'),
+    endTime: getRelativeDateISO(1, '10:25'),
     status: 'accepted',
     isRecurring: false,
     recurrenceDays: [],
     instances: [],
-    expiresAt: makeISO('2026-09-26', '09:30'),
+    expiresAt: getRelativeDateISO(0, '09:30'),
   },
 
-  // ── 5. PROPOSED — still awaiting Emeka's response (just sent) ────────────
+  'bk-tunde-future': {
+    id: 'bk-tunde-future',
+    driverContactId: 'mock-4',
+    riderName: 'Me',
+    pickup: 'Victoria Island, Lagos',
+    dropoff: 'Maryland Mall, Ikeja',
+    distanceKm: 22.1,
+    durationMin: 60,
+    baselineFare: 5500,
+    proposedFare: 6000,
+    counterFare: null,
+    counterNote: null,
+    counterTags: [],
+    modifiers: [],
+    startTime: getRelativeDateISO(2, '18:00'),
+    endTime: getRelativeDateISO(2, '19:00'),
+    status: 'accepted',
+    isRecurring: false,
+    recurrenceDays: [],
+    instances: [],
+    expiresAt: getRelativeDateISO(1, '18:00'),
+  },
+
   'bk-emeka-proposed': {
     id: 'bk-emeka-proposed',
     driverContactId: 'mock-3',
@@ -171,13 +196,13 @@ const INITIAL_BOOKINGS: Record<string, MockBooking> = {
     counterNote: null,
     counterTags: [],
     modifiers: [],
-    startTime: makeISO('2026-09-26', '11:00'),
-    endTime: makeISO('2026-09-26', '11:40'),
+    startTime: getRelativeDateISO(1, '11:00'),
+    endTime: getRelativeDateISO(1, '11:40'),
     status: 'proposed',
     isRecurring: false,
     recurrenceDays: [],
     instances: [],
-    expiresAt: makeISO('2026-09-26', '11:00'),
+    expiresAt: getRelativeDateISO(1, '11:00'),
   },
 };
 
@@ -187,7 +212,9 @@ export function useMockBookings() {
 
   useEffect(() => {
     const stored = localStorage.getItem('mock_bookings');
-    if (stored) {
+    const version = localStorage.getItem('mock_bookings_version');
+    
+    if (stored && version === 'v2') {
       try {
         setBookings(JSON.parse(stored));
       } catch {
@@ -198,6 +225,7 @@ export function useMockBookings() {
     } else {
       setBookings(INITIAL_BOOKINGS);
       localStorage.setItem('mock_bookings', JSON.stringify(INITIAL_BOOKINGS));
+      localStorage.setItem('mock_bookings_version', 'v2');
     }
     setIsLoaded(true);
 
