@@ -5,53 +5,23 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Car, CreditCard } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
+import { useMockDb } from "@/lib/mock-db";
+
 const IS_DEV =
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
 
-const MOCK_PROFILES: Record<string, any> = {
-  "mock-1": {
-    id: "mock-1",
-    display_name: "Chinedu Okeke",
-    phone: "+234 803 123 4567",
-    role: "driver",
-    completion_rate: 98,
-    total_completed_rides: 142,
-    car_make_model: "Toyota Corolla 2010",
-    plate_number: "LSR-432-XY",
-    bank_name: "GTBank",       // has bank details — is a contact
-    account_number: "0123456789",
-  },
-  "mock-2": {
-    id: "mock-2",
-    display_name: "Sarah Bello",
-    phone: "+234 806 987 6543",
-    role: "rider",             // rider — never show payment section
-    bank_name: null,
-    account_number: null,
-  },
-  "mock-3": {
-    id: "mock-3",
-    display_name: "Emeka Nwosu",
-    phone: "+234 701 555 9999",
-    role: "driver",
-    completion_rate: 84,
-    car_make_model: "Honda Accord 2015",
-    plate_number: "ABJ-123-EK",
-    bank_name: null,           // null — not a contact, payment hidden
-    account_number: null,
-  },
-};
-
 export default function PublicProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { db } = useMockDb();
+  
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       if (IS_DEV) {
-        setProfile(MOCK_PROFILES[params.id] ?? MOCK_PROFILES["mock-3"]);
+        setProfile(db[params.id] ?? db["mock-3"]);
         setLoading(false);
         return;
       }
@@ -66,7 +36,7 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
       setLoading(false);
     }
     load();
-  }, [params.id]);
+  }, [params.id, db]);
 
   if (loading)
     return (

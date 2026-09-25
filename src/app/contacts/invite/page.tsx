@@ -15,15 +15,27 @@ export default function InvitePage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push("/auth");
-      
-      const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+      const IS_DEV = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+      const bypass = localStorage.getItem('dev_bypass') === 'true';
+
+      let currentUserId = 'mock-1';
+      let currentUserName = 'Test User';
+
+      if (!IS_DEV && !bypass) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return router.push("/auth");
+        
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+        currentUserId = user.id;
+        currentUserName = profile?.display_name || 'A user';
+        setUser(profile);
+      } else {
+        setUser({ display_name: currentUserName });
+      }
       
       // Construct deep link
-      const url = `${window.location.origin}/join?ref=${user.id}&name=${encodeURIComponent(profile?.display_name || 'A user')}`;
+      const url = `${window.location.origin}/join?ref=${currentUserId}&name=${encodeURIComponent(currentUserName)}`;
       setInviteUrl(url);
-      setUser(profile);
       
       // Generate QR Code
       try {

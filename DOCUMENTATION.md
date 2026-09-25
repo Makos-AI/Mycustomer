@@ -7,17 +7,19 @@
 ## 🌟 Comprehensive Feature List
 
 ### 1. Web-Native Onboarding & Authentication
-* **Passwordless Magic Links:** Seamless, frictionless login using secure email links, eliminating the need to remember passwords or pay for SMS OTPs.
+* **Phone OTP Authentication:** Fast, SMS-based login tailored for the Nigerian market (designed for integration with Termii to bypass Twilio DND restrictions).
 * **Progressive Web App (PWA):** Installable directly from the browser to the mobile home screen (via Serwist), bypassing app store friction and approval delays.
-* **Role-Based Profiles:** Users can specify if they intend to use the platform as a Rider, Driver, or Both.
+* **Role-Based Profiles:** Users can specify if they intend to use the platform as a Passenger or Driver.
 
 ### 2. Decentralized Contact & Invite System
 * **Social Graph Reliance:** No random driver matching. Trust is pushed to the user's existing social network.
 * **Personalized Invite Links:** Deep links generated per user that can be sent via WhatsApp or standard text messages.
 * **In-Person QR Code Invites:** Drivers or riders can instantly generate a QR code for a trusted contact to scan in the physical world.
+* **Pending Approvals:** Invites enter a pending state and must be explicitly accepted, preventing spam and ensuring mutual trust.
 
 ### 3. Chat-First Booking Interface
 * **WhatsApp-Style Threading:** Familiar messaging UI where all interactions (chats, bookings, milestones) occur within the context of a specific driver-rider relationship.
+* **Contextual Menus:** Interactive chat menus for standard actions (Clear Chat, Block, Report) and attachments (Location, Gallery, Book Ride).
 * **Live Location Integration:** Drivers can easily paste their standard WhatsApp Live Location link into their profile or chat to share their real-time whereabouts, outsourcing heavy background location tracking to a trusted native app.
 
 ### 4. Contextual Booking Engine
@@ -37,7 +39,7 @@
 
 ### 7. Conditional Privacy & Payments
 * **Public Profile Obfuscation:** Strangers can only see a driver’s Name, Phone, Car Make/Model, and Plate Number.
-* **Contact-Gated Bank Details:** Once a rider adds a driver as a saved contact, the driver's Bank Name and Account Number unlock for seamless, zero-commission offline transfers.
+* **Contact-Gated Bank Details:** Enforced at the database level via a secure RPC (`get_driver_profile`). Only once a rider adds a driver as a saved, non-pending contact do the driver's Bank Name and Account Number unlock for seamless offline transfers.
 
 ### 8. Relational Milestones (Social Triggers)
 * **Automated Celebrations:** The database tracks shared history between specific rider-driver pairs.
@@ -47,13 +49,14 @@
 
 ## 🛠 Technical Architecture
 
-* **Frontend Framework:** Next.js 14+ (App Router) with React
+* **Frontend Framework:** Next.js (App Router) with React
 * **Design System:** Tailwind CSS with custom glassmorphic dark-mode utilities
 * **PWA Engine:** `@serwist/next` (Service workers, offline caching, installability)
 * **Backend & Database:** Supabase (PostgreSQL)
-* **Authentication:** Supabase Auth (Email Magic Links)
+* **Authentication:** Supabase Auth (Phone OTP via Termii Edge Function hook)
 * **Real-time Engine:** Supabase Realtime (WebSockets for chat and live booking updates)
 * **Mapping:** Google Maps JavaScript API (Places Autocomplete, Directions, Distance Matrix)
+* **Prototyping State:** Unified `localStorage` mock database for robust frontend UI testing without active backend connections.
 * **Deployment (Recommended):** Vercel
 
 ---
@@ -63,7 +66,7 @@
 | Table | Purpose | Key Fields |
 |---|---|---|
 | `profiles` | Extended user data | `role`, `completion_rate`, `car_make_model`, `plate_number`, `bank_name`, `account_number` |
-| `contacts` | The decentralized social graph | `user_id`, `contact_id`, `nickname` |
+| `contacts` | The decentralized social graph | `user_id`, `contact_id`, `is_pending` |
 | `conversations` | Chat thread containers | `id`, `created_at`, `updated_at` |
 | `chat_messages` | Thread items | `sender_id`, `content`, `type (text, booking, milestone)` |
 | `bookings` | Core transaction ledger | `pickup_window`, `distance_km`, `agreed_fare`, `modifiers`, `status` |
@@ -75,14 +78,14 @@
 ## 🔄 User Workflows
 
 ### The Driver Onboarding Flow
-1. Driver opens the PWA URL and enters their email.
-2. Clicks the Magic Link in their inbox to authenticate.
-3. Fills out Display Name, uploads a Photo, and selects "Driver" role.
+1. Driver opens the PWA URL and enters their phone number.
+2. Receives a 6-digit OTP via Termii SMS to authenticate.
+3. Fills out Display Name and selects "Driver" role.
 4. Updates Profile with Vehicle details (Car Make, Plate) and Payment details (Bank Name, Account No).
-5. Opens `Invite Contacts`, generating a QR code for their existing riders to scan.
+5. Opens `Invite Contacts`, generating a QR code or deep link for their existing riders.
 
 ### The Booking & Negotiation Flow
-1. Rider opens a Chat thread with a trusted Driver and taps "Book".
+1. Rider opens a Chat thread with a trusted Driver and taps the `+` menu -> "Book Ride".
 2. Rider selects a 30-minute flexible window, adds "AC On", and proposes a custom fare.
 3. Driver receives the offer. They see heavy traffic, so they tap the `+` button to add ₦500, tap the `"Severe Traffic"` tag, and hit Send Counter.
 4. Rider accepts the counter-offer. Ride status transitions to `accepted`.
