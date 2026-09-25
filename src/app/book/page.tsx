@@ -2,17 +2,17 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, Navigation, Search, AlertTriangle, CalendarDays } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Navigation, Search, CalendarDays, Plus, Minus, User } from "lucide-react";
 import { MapView } from "@/components/booking/MapView";
 import { calculateBaselineFare, modifiers } from "@/lib/fare-calculator";
 import { BookingState, BookingDraft, EMPTY_DRAFT } from "@/lib/booking-state";
 import { useMockBookings } from "@/lib/mock-bookings";
 
 const RECENT_LOCATIONS = [
-  "Victoria Island, Lagos",
-  "Lekki Phase 1, Lagos",
-  "Ikeja City Mall, Lagos",
-  "Murtala Muhammed Airport, Ikeja"
+  "Wole Soyinka Centre for Culture and...",
+  "11 Oladipupo Oduwole Street, Ikeja",
+  "14 Adegbeyeni Street, Ikeja",
+  "28 Majaro Street, Lagos"
 ];
 
 function BookRideContent() {
@@ -26,7 +26,7 @@ function BookRideContent() {
   const [draft, setDraft] = useState<BookingDraft>({
     ...EMPTY_DRAFT,
     driverContactId: driverContactId || '',
-    pickupAddress: "My Current Location",
+    pickupAddress: "Majaro St 22",
   });
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,12 +54,10 @@ function BookRideContent() {
   const selectDestination = (loc: string) => {
     setDraft(prev => ({ ...prev, dropoffAddress: loc }));
     setStep('route');
-    // Mock the route calculation delay
     setLoadingRoute(true);
     setTimeout(() => {
-      // Hardcode dev values
       const dist = 12.5;
-      const dur = 45;
+      const dur = 21;
       const base = calculateBaselineFare(dist, dur);
       setDraft(prev => ({
         ...prev,
@@ -69,7 +67,8 @@ function BookRideContent() {
       }));
       setCustomFare(base);
       setLoadingRoute(false);
-    }, 1500);
+      setStep('configure'); // Skip right to configure in the reference
+    }, 800);
   };
 
   // STATE 3: MODIFIERS & SUBMIT
@@ -78,14 +77,12 @@ function BookRideContent() {
     const exists = draft.modifiers.find(m => m.id === modId);
     
     if (exists?.active) {
-      // deactivate
       setDraft(prev => ({
         ...prev,
         modifiers: prev.modifiers.map(m => m.id === modId ? { ...m, active: false } : m)
       }));
       setCustomFare(prev => prev - modDef.increment);
     } else {
-      // activate
       setDraft(prev => ({
         ...prev,
         modifiers: [
@@ -118,8 +115,6 @@ function BookRideContent() {
   const handleSubmit = () => {
     if (!validateTime()) return;
 
-    // Optional: Conflict check goes here (always clears in dev mode)
-
     const finalDraft: BookingDraft = {
       ...draft,
       proposedFare: customFare,
@@ -132,196 +127,168 @@ function BookRideContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900">
-      <div className="flex items-center p-4 border-b border-slate-800 shrink-0">
-        <button onClick={() => {
-          if (step === 'configure') setStep('route');
-          else if (step === 'route') setStep('location');
-          else router.back();
-        }} className="p-2 mr-2 text-slate-300 hover:text-white rounded-full hover:bg-slate-800">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-semibold">
-          {step === 'location' ? 'Where to?' : step === 'route' ? 'Confirm Route' : 'Configure Ride'}
-        </h1>
+    <div className="flex flex-col h-screen bg-white">
+      {/* MAP LAYER: Always behind UI */}
+      <div className="absolute inset-0 z-0">
+        <MapView />
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-24">
-        {/* MAP VISIBLE IN ALL STATES */}
-        <div className={`w-full transition-all duration-300 ${step === 'location' ? 'h-64' : 'h-48'} p-4`}>
-          <MapView />
+      {/* FLOATING HEADER / BACK BUTTON */}
+      <div className="relative z-10 p-4">
+        <button onClick={() => {
+          if (step === 'configure') setStep('location');
+          else router.back();
+        }} className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">
+          <ArrowLeft className="w-5 h-5 text-black" />
+        </button>
+      </div>
+
+      <div className="flex-1 relative z-10 pointer-events-none" />
+
+      {/* BOTTOM SHEET */}
+      <div className="relative z-20 bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto" style={{ maxHeight: '80vh' }}>
+        {/* Drag handle */}
+        <div className="w-full flex justify-center py-3">
+          <div className="w-10 h-1 rounded-full bg-gray-300" />
         </div>
 
-        <div className="px-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-5">
           
           {/* ================= STATE 1: LOCATION ================= */}
           {step === 'location' && (
-            <div className="animate-fade-in space-y-4">
+            <div className="animate-fade-in space-y-6">
               <div className="relative">
-                <Search className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Where to & for how much?"
-                  className="w-full bg-slate-800 border-none rounded-xl py-3 pl-10 pr-4 text-white focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-[#f3f4f6] border-none rounded-2xl py-3.5 pl-12 pr-4 text-black font-semibold placeholder-gray-500 focus:ring-2 focus:ring-black outline-none"
                 />
               </div>
 
-              <div className="pt-2">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Recent Locations</h3>
+              <div className="space-y-4">
                 {RECENT_LOCATIONS.map(loc => (
                   <button 
                     key={loc}
                     onClick={() => selectDestination(loc)}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-slate-800 rounded-xl text-left transition-colors"
+                    className="flex items-center gap-4 w-full text-left active:bg-gray-50 p-2 -mx-2 rounded-xl transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
-                      <Clock className="w-4 h-4 text-slate-400" />
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5 text-gray-500" />
                     </div>
-                    <span className="text-sm text-slate-200">{loc}</span>
+                    <span className="text-base font-semibold text-gray-900 leading-tight">{loc}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ================= STATE 2: ROUTE ================= */}
-          {step === 'route' && (
-            <div className="animate-fade-in space-y-4">
-              <div className="bg-slate-800 rounded-xl p-4 space-y-4 relative">
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-4 h-4 text-teal-400 shrink-0" />
-                  <input 
-                    value={draft.pickupAddress}
-                    onChange={(e) => setDraft({...draft, pickupAddress: e.target.value})}
-                    className="bg-transparent border-none text-sm font-medium w-full text-white outline-none"
-                  />
+          {/* ================= STATE 3: CONFIGURE (RIDE OPTIONS) ================= */}
+          {(step === 'configure' || loadingRoute) && (
+            <div className="animate-slide-up space-y-6">
+              {/* Route Summary */}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="w-2 h-2 bg-black rounded-full" />
+                  <div className="w-0.5 h-6 bg-gray-300" />
+                  <div className="w-2 h-2 bg-gray-400 rounded-sm" />
                 </div>
-                <div className="w-0.5 h-6 bg-slate-700 absolute left-[23px] top-8"></div>
-                <div className="flex items-center gap-3">
-                  <Navigation className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <input 
-                    readOnly
-                    value={draft.dropoffAddress}
-                    className="bg-transparent border-none text-sm font-medium w-full text-white outline-none"
-                  />
+                <div className="flex-1 text-sm font-semibold">
+                  <p className="text-black py-1">{draft.pickupAddress}</p>
+                  <div className="h-[1px] bg-gray-100" />
+                  <p className="text-gray-500 py-1">{loadingRoute ? 'Loading...' : draft.dropoffAddress}</p>
                 </div>
               </div>
 
-              {loadingRoute ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-2" />
-                  <p className="text-sm text-slate-400">Calculating route...</p>
+              {/* Ride Type Display */}
+              <div className="bg-[#f3f4f6] rounded-2xl p-4 flex items-center gap-4">
+                <div className="w-14 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🚘</span>
                 </div>
-              ) : (
-                <div className="flex justify-between items-center bg-[#1f2937] border border-slate-700 rounded-xl p-4 animate-slide-in">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase">Estimated Route</p>
-                    <p className="font-semibold text-white">{draft.distanceKm} km · {draft.durationMin} min</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 font-bold text-gray-900 text-lg">
+                    Ride <span className="text-gray-400 text-sm font-normal">ⓘ</span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-slate-400 uppercase">Recommended Fare</p>
-                    <p className="text-lg font-bold text-teal-400">₦{draft.baselineFare.toLocaleString()}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 font-medium mt-0.5">
+                    <User className="w-4 h-4" /> 4 • {loadingRoute ? '--' : draft.durationMin} min
                   </div>
+                  <p className="text-sm text-gray-500 mt-1">Affordable fares</p>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
 
-          {/* ================= STATE 3: CONFIGURE ================= */}
-          {step === 'configure' && (
-            <div className="animate-fade-in space-y-6">
-              
-              <div className="bg-[#1f2937] border border-slate-700 rounded-xl p-4">
-                <h3 className="font-semibold text-sm mb-4">Your Offer</h3>
-                <div className="flex items-center justify-between bg-slate-800 rounded-xl p-2 mb-4">
+              {/* FARE NEGOTIATOR */}
+              <div className="flex flex-col items-center justify-center py-2">
+                <div className="flex items-center justify-between w-full max-w-[280px]">
                   <button 
                     onClick={() => setCustomFare(prev => Math.max(500, prev - 100))}
-                    disabled={customFare <= 500}
-                    className="w-12 h-12 flex items-center justify-center bg-slate-700 rounded-lg text-2xl font-bold active:bg-slate-600 disabled:opacity-50"
-                  >-</button>
-                  <div className="text-center">
-                    <span className="text-xs text-slate-400 block mb-1">RECOMMENDED: ₦{draft.baselineFare.toLocaleString()}</span>
-                    <span className="text-3xl font-bold text-teal-400">₦{customFare.toLocaleString()}</span>
+                    disabled={customFare <= 500 || loadingRoute}
+                    className="w-14 h-14 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center active:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Minus className="w-6 h-6 text-black" />
+                  </button>
+                  
+                  <div className="text-center flex-1">
+                    <span className="text-3xl font-bold text-black block tracking-tight">
+                      ₦{loadingRoute ? '...' : customFare.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                      Recommended fare
+                    </span>
                   </div>
+
                   <button 
                     onClick={() => setCustomFare(prev => prev + 100)}
-                    className="w-12 h-12 flex items-center justify-center bg-slate-700 rounded-lg text-2xl font-bold active:bg-slate-600"
-                  >+</button>
+                    disabled={loadingRoute}
+                    className="w-14 h-14 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center active:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Plus className="w-6 h-6 text-black" />
+                  </button>
                 </div>
+              </div>
 
+              {/* Extras & Time */}
+              <div className="border border-gray-200 rounded-2xl p-4 space-y-4">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-gray-900">
+                  <CalendarDays className="w-4 h-4 text-gray-500" />
+                  Schedule Ride Options
+                </h3>
+                
                 <div className="flex flex-wrap gap-2">
                   {modifiers.map(mod => {
                     const isActive = draft.modifiers.find(m => m.id === mod.id)?.active;
                     return (
                       <button
-                        key={mod.id}
-                        onClick={() => toggleModifier(mod.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          isActive 
-                            ? "bg-teal-500/20 border-teal-500 text-teal-400" 
-                            : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
-                        }`}
+                         key={mod.id}
+                         onClick={() => toggleModifier(mod.id)}
+                         disabled={loadingRoute}
+                         className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                           isActive 
+                             ? "bg-black text-white" 
+                             : "bg-gray-100 text-gray-600 active:bg-gray-200"
+                         }`}
                       >
-                        {mod.label} (+₦{mod.increment})
+                         {mod.label}
                       </button>
                     )
                   })}
                 </div>
-              </div>
 
-              <div className="bg-[#1f2937] border border-slate-700 rounded-xl p-4 space-y-4">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-teal-400" />
-                  Schedule Time
-                </h3>
-                
-                <div className="flex gap-4">
+                <div className="flex gap-3 pt-2">
                   <input 
                     type="date"
                     value={pickupDate}
                     onChange={(e) => setPickupDate(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none"
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-black"
                   />
                   <input 
                     type="time"
                     step="900"
                     value={pickupTime}
                     onChange={(e) => setPickupTime(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none"
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-black"
                   />
-                </div>
-
-                <div className="pt-2 border-t border-slate-700">
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <span className="text-sm font-medium">Repeat Ride</span>
-                    <input 
-                      type="checkbox" 
-                      checked={showRepeat}
-                      onChange={(e) => setShowRepeat(e.target.checked)}
-                      className="w-5 h-5 rounded border-slate-700 text-teal-500 focus:ring-teal-500 bg-slate-800"
-                    />
-                  </label>
-
-                  {showRepeat && (
-                    <div className="mt-4 flex justify-between animate-slide-in">
-                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
-                        const isSelected = draft.recurrenceDays.includes(day);
-                        return (
-                          <button
-                            key={day}
-                            onClick={() => toggleDay(day)}
-                            className={`w-10 h-10 rounded-full text-xs font-bold transition-colors ${
-                              isSelected ? 'bg-teal-500 text-white' : 'bg-slate-800 text-slate-400'
-                            }`}
-                          >
-                            {day.charAt(0)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -329,36 +296,28 @@ function BookRideContent() {
           )}
 
         </div>
-      </div>
 
-      {/* FIXED ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 max-w-md mx-auto">
-        {step === 'location' && (
-          <button 
-            onClick={() => selectDestination(searchQuery || "Custom Location")}
-            disabled={!searchQuery.trim()}
-            className="w-full bg-teal-500 text-white font-bold py-4 rounded-full text-lg disabled:opacity-50 active:bg-teal-600 transition-colors"
-          >
-            Continue
-          </button>
-        )}
-        {step === 'route' && (
-          <button 
-            onClick={() => setStep('configure')}
-            disabled={loadingRoute}
-            className="w-full bg-teal-500 text-white font-bold py-4 rounded-full text-lg disabled:opacity-50 active:bg-teal-600 transition-colors"
-          >
-            Confirm Route
-          </button>
-        )}
-        {step === 'configure' && (
-          <button 
-            onClick={handleSubmit}
-            className="w-full bg-teal-500 text-white font-bold py-4 rounded-full text-lg active:bg-teal-600 transition-colors"
-          >
-            Schedule Ride
-          </button>
-        )}
+        {/* FIXED ACTION BUTTON */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white pb-8 shadow-[0_-10px_20px_rgba(255,255,255,0.9)]">
+          {step === 'location' && (
+            <button 
+              onClick={() => selectDestination(searchQuery || "Custom Location")}
+              disabled={!searchQuery.trim()}
+              className="w-full bg-[#a3e635] text-black font-bold py-4 rounded-2xl text-lg disabled:opacity-50 active:bg-[#84cc16] transition-colors shadow-sm"
+            >
+              Continue
+            </button>
+          )}
+          {step === 'configure' && (
+            <button 
+              onClick={handleSubmit}
+              disabled={loadingRoute}
+              className="w-full bg-[#a3e635] text-black font-bold py-4 rounded-2xl text-lg active:bg-[#84cc16] transition-colors shadow-sm"
+            >
+              Find drivers
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -367,8 +326,8 @@ function BookRideContent() {
 export default function BookRidePage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
       </div>
     }>
       <BookRideContent />

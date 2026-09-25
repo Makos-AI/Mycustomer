@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { useMemo, useEffect, useRef } from "react";
+import { ListTodo, Search, Plus, ChevronLeft } from "lucide-react";
 
 interface DayNavigatorProps {
   selectedDate: Date;
@@ -10,68 +11,88 @@ interface DayNavigatorProps {
 }
 
 export function DayNavigator({ selectedDate, onChange, minDate, maxDate }: DayNavigatorProps) {
-  
-  // Format for display: e.g. "Today", "Tomorrow", "Thu, Oct 24"
-  const getDisplayLabel = (d: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const target = new Date(d);
-    target.setHours(0, 0, 0, 0);
-    
-    const diffTime = target.getTime() - today.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays === -1) return "Yesterday";
-    
-    return target.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-  };
+  // Generate a list of dates to show in the strip (e.g. 14 days around the selected date)
+  const days = useMemo(() => {
+    const arr = [];
+    const start = new Date(minDate);
+    while (start <= maxDate) {
+      arr.push(new Date(start));
+      start.setDate(start.getDate() + 1);
+    }
+    return arr;
+  }, [minDate, maxDate]);
 
-  const handlePrev = () => {
-    const prev = new Date(selectedDate);
-    prev.setDate(prev.getDate() - 1);
-    if (prev >= minDate) onChange(prev);
-  };
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleNext = () => {
-    const next = new Date(selectedDate);
-    next.setDate(next.getDate() + 1);
-    if (next <= maxDate) onChange(next);
-  };
+  // Center the selected date on load or change
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedEl = scrollRef.current.querySelector('[data-selected="true"]');
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [selectedDate]);
 
-  // Check bounds at start of day comparison
-  const dStart = new Date(selectedDate).setHours(0,0,0,0);
-  const minStart = new Date(minDate).setHours(0,0,0,0);
-  const maxStart = new Date(maxDate).setHours(0,0,0,0);
-  
-  const canPrev = dStart > minStart;
-  const canNext = dStart < maxStart;
+  // e.g. "Friday — 25 Sep 2026"
+  const formattedFullDate = selectedDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).replace(',', ' —'); // Format: Friday — 25 Sep 2026
+
+  const monthName = selectedDate.toLocaleDateString('en-US', { month: 'long' });
 
   return (
-    <div className="flex items-center justify-between bg-slate-900 border-b border-slate-800 px-4 py-3 shrink-0">
-      <button 
-        onClick={handlePrev}
-        disabled={!canPrev}
-        className="p-2 rounded-full hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-      >
-        <ChevronLeft className="w-5 h-5 text-white" />
-      </button>
-
-      <div className="flex items-center gap-2">
-        <CalendarIcon className="w-4 h-4 text-teal-400" />
-        <span className="font-semibold text-white">
-          {getDisplayLabel(selectedDate)}
-        </span>
+    <div className="flex flex-col bg-white shrink-0">
+      
+      {/* Top Calendar Header */}
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center text-red-500 font-medium text-xl tracking-tight gap-1">
+          <ChevronLeft className="w-6 h-6 -ml-1 stroke-[2.5]" />
+          {monthName}
+        </div>
+        <div className="flex items-center gap-5 text-red-500">
+          <ListTodo className="w-6 h-6 stroke-[2]" />
+          <Search className="w-6 h-6 stroke-[2]" />
+          <Plus className="w-7 h-7 stroke-[2]" />
+        </div>
       </div>
 
-      <button 
-        onClick={handleNext}
-        disabled={!canNext}
-        className="p-2 rounded-full hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+      {/* Days Strip */}
+      <div 
+        ref={scrollRef}
+        className="flex items-center gap-1 overflow-x-auto no-scrollbar px-2 py-3 border-b border-gray-100"
       >
-        <ChevronRight className="w-5 h-5 text-white" />
-      </button>
+        {days.map((d, i) => {
+          const isSelected = d.toDateString() === selectedDate.toDateString();
+          const dayName = d.toLocaleDateString('en-US', { weekday: 'narrow' }); // M, T, W...
+          const dateNum = d.getDate();
+          
+          return (
+            <button
+              key={i}
+              data-selected={isSelected}
+              onClick={() => onChange(d)}
+              className="flex flex-col items-center justify-center min-w-[14%] flex-1 gap-1.5"
+            >
+              <span className="text-[11px] font-bold text-gray-500 uppercase">{dayName}</span>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[17px] font-semibold transition-colors ${
+                isSelected ? 'bg-red-500 text-white shadow-sm' : 'bg-transparent text-black'
+              }`}>
+                {dateNum}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Date Subtitle */}
+      <div className="w-full text-center py-2.5 bg-white border-b border-gray-200">
+        <span className="text-sm font-bold text-black">{formattedFullDate}</span>
+      </div>
+      
     </div>
   );
 }

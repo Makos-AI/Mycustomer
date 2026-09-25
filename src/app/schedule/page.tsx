@@ -61,24 +61,24 @@ export default function SchedulePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 overflow-hidden pb-20">
+    <div className="flex flex-col h-screen bg-white overflow-hidden pb-20">
       
       {/* Header & Tabs */}
-      <div className="px-4 pt-8 pb-2 shrink-0 bg-slate-900 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-white mb-4">Calendar</h1>
+      <div className="px-4 pt-8 pb-2 shrink-0 bg-white border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-black mb-4">Calendar</h1>
         
         <div className="flex gap-6">
           {(['schedule', 'history', 'pending'] as const).map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
               className="pb-2 text-sm font-semibold capitalize transition-colors relative"
               style={{
-                color: activeTab === t ? '#22c55e' : '#6b7280',
-                borderBottom: activeTab === t ? '2px solid #22c55e' : '2px solid transparent',
+                color: activeTab === t ? '#ef4444' : '#6b7280',
+                borderBottom: activeTab === t ? '2px solid #ef4444' : '2px solid transparent',
                 marginBottom: '-1px'
               }}>
               {t}
               {t === 'pending' && pendingCount > 0 && (
-                <span className="absolute -top-1 -right-4 bg-teal-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-4 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                   {pendingCount}
                 </span>
               )}
@@ -114,23 +114,23 @@ export default function SchedulePage() {
           <div className="p-4 space-y-4 animate-fade-in">
             {completedRides.length === 0 ? (
               <div className="text-center py-20">
-                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl opacity-50">🚗</span>
                 </div>
-                <p className="text-slate-400 font-medium text-sm">No rides yet. Book your first ride!</p>
+                <p className="text-gray-500 font-medium text-sm">No rides yet. Book your first ride!</p>
               </div>
             ) : (
               completedRides.map(ride => (
                 <div 
                   key={ride.id} 
                   onClick={() => setDetailBooking({ booking: ride })}
-                  className="bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer hover:bg-slate-750 transition-colors"
+                  className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-bold text-white">{new Date(ride.startTime).toLocaleDateString()}</span>
-                    <span className="text-sm font-bold text-teal-400">₦{ride.proposedFare.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-gray-900">{new Date(ride.startTime).toLocaleDateString()}</span>
+                    <span className="text-sm font-bold text-teal-600">₦{ride.proposedFare.toLocaleString()}</span>
                   </div>
-                  <p className="text-xs text-slate-400 line-clamp-1">{ride.pickup} → {ride.dropoff}</p>
+                  <p className="text-xs text-gray-500 line-clamp-1">{ride.pickup} → {ride.dropoff}</p>
                 </div>
               ))
             )}
@@ -142,10 +142,10 @@ export default function SchedulePage() {
           <div className="p-4 space-y-4 animate-fade-in flex flex-col items-center">
             {pendingRequests.length === 0 ? (
               <div className="text-center py-20 w-full">
-                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl opacity-50">⏳</span>
                 </div>
-                <p className="text-slate-400 font-medium text-sm">No pending requests right now.</p>
+                <p className="text-gray-500 font-medium text-sm">No pending requests right now.</p>
               </div>
             ) : (
               pendingRequests.map(booking => (
