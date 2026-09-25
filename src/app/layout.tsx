@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { BottomNav } from "@/components/nav/BottomNav";
 
 export const metadata: Metadata = {
   title: "MyCustomer",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-slate-900 text-slate-50 flex flex-col">
         <main className="flex-1 w-full max-w-md mx-auto relative overflow-hidden">
           {children}
+          <BottomNav />
         </main>
       </body>
     </html>

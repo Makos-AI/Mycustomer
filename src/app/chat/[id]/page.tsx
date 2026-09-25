@@ -6,6 +6,9 @@ import { ArrowLeft, Phone, MoreVertical, Plus, Send, Mic, MapPin, Image as Image
 import Link from "next/link";
 import { TemplateBar } from "@/components/chat/TemplateBar";
 import { useMockDb } from "@/lib/mock-db";
+import { useMockBookings, MockBooking } from "@/lib/mock-bookings";
+import { OfferCard } from "@/components/booking/OfferCard";
+import { NegotiationPanel } from "@/components/negotiation/NegotiationPanel";
 
 export default function ChatThreadPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -13,12 +16,27 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
   
   const { db, sendMessage, markAsRead } = useMockDb();
   const contact = db[contactId];
+
+  const { 
+    bookings, 
+    acceptBooking, 
+    declineBooking, 
+    counterBooking, 
+    acceptCounter, 
+    declineCounter 
+  } = useMockBookings();
   
+  // Filter bookings for this specific contact
+  const contactBookings = bookings.filter(b => b.driverContactId === contactId);
+
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showDotMenu, setShowDotMenu] = useState(false);
+
+  // Negotiation panel state
+  const [negotiationBooking, setNegotiationBooking] = useState<MockBooking | null>(null);
 
   useEffect(() => {
     if (contact && contact.unread > 0) {
@@ -28,7 +46,7 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [contact?.messages]);
+  }, [contact?.messages, contactBookings.length]);
 
   const handleSend = (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -42,6 +60,9 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
       <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
+
+  // Determine viewer role. If contact is driver, we are rider.
+  const viewerRole = contact.role === 'driver' ? 'rider' : 'driver';
 
   return (
     <div className="flex flex-col h-screen" style={{ background: '#0d1117' }}>
@@ -79,6 +100,9 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
                 <Link href={`/profile/${contactId}`}>
                   <button className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 rounded-lg">View Profile</button>
                 </Link>
+                <button onClick={() => router.push(`/book?driverId=${contactId}`)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/5 rounded-lg text-slate-300">
+                  <Car className="w-4 h-4" /> Schedule Ride
+                </button>
                 <button onClick={() => { alert('Chat cleared!'); setShowDotMenu(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-white/5 rounded-lg text-slate-300">
                   <Trash2 className="w-4 h-4" /> Clear Chat
                 </button>
@@ -113,6 +137,26 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         ))}
+        
+        {/* Render Bookings/Offer Cards inline */}
+        {contactBookings.map(booking => (
+          <div key={booking.id} className="flex justify-center w-full my-2">
+            <OfferCard 
+              booking={booking} 
+              viewerRole={viewerRole}
+              onAccept={() => {
+                if (booking.status === 'proposed') acceptBooking(booking.id);
+                else if (booking.status === 'countered') acceptCounter(booking.id);
+              }}
+              onDecline={() => {
+                if (booking.status === 'proposed') declineBooking(booking.id);
+                else if (booking.status === 'countered') declineCounter(booking.id);
+              }}
+              onCounter={() => setNegotiationBooking(booking)}
+            />
+          </div>
+        ))}
+        
         <div ref={bottomRef} />
       </div>
 
@@ -135,7 +179,7 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
               </div>
               <span className="text-xs text-slate-300">Gallery</span>
             </button>
-            <button onClick={() => { router.push('/book'); }} className="flex flex-col items-center gap-2">
+            <button onClick={() => { router.push(`/book?driverId=${contactId}`); }} className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: '#16a34a' }}>
                 <Car className="w-6 h-6" />
               </div>
@@ -172,6 +216,19 @@ export default function ChatThreadPage({ params }: { params: { id: string } }) {
           )}
         </form>
       </div>
+
+      {/* Negotiation Bottom Sheet */}
+      {negotiationBooking && (
+        <NegotiationPanel
+          isOpen={!!negotiationBooking}
+          proposedFare={negotiationBooking.proposedFare}
+          riderName={contact.display_name}
+          onClose={() => setNegotiationBooking(null)}
+          onCounter={(fare, note, tags) => {
+            counterBooking(negotiationBooking.id, fare, note, tags);
+          }}
+        />
+      )}
     </div>
   );
 }
