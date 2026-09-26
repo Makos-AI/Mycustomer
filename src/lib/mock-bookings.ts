@@ -40,18 +40,25 @@ export type MockBooking = {
 // SEED BOOKINGS — realistic workflow data, week of Sept 22–28 2026
 // Today is Friday Sept 25, 2026
 // ─────────────────────────────────────────────────────────────────────────────
-const getRelativeDateISO = (daysOffset: number, timeStr: string) => {
-  const date = new Date();
-  date.setDate(date.getDate() + daysOffset);
-  const [hours, minutes] = timeStr.split(':');
-  date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-  return date.toISOString();
+// Returns a local-timezone ISO string for a date offset by daysOffset from today, at a given HH:MM time.
+const getRelativeDateISO = (daysOffset: number, timeStr: string): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  // Build a local datetime string and parse it — avoids UTC offset shifting the date
+  return new Date(`${year}-${month}-${day}T${timeStr}:00`).toISOString();
 };
 
-const getRelativeDateStr = (daysOffset: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + daysOffset);
-  return date.toISOString().split('T')[0];
+// Returns YYYY-MM-DD for a date offset by daysOffset from today (local timezone)
+const getRelativeDateStr = (daysOffset: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const commuteInstances: MockBookingInstance[] = [
@@ -159,28 +166,6 @@ const INITIAL_BOOKINGS: Record<string, MockBooking> = {
     expiresAt: getRelativeDateISO(0, '09:30'),
   },
 
-  'bk-tunde-future': {
-    id: 'bk-tunde-future',
-    driverContactId: 'mock-4',
-    riderName: 'Me',
-    pickup: 'Victoria Island, Lagos',
-    dropoff: 'Maryland Mall, Ikeja',
-    distanceKm: 22.1,
-    durationMin: 60,
-    baselineFare: 5500,
-    proposedFare: 6000,
-    counterFare: null,
-    counterNote: null,
-    counterTags: [],
-    modifiers: [],
-    startTime: getRelativeDateISO(2, '18:00'),
-    endTime: getRelativeDateISO(2, '19:00'),
-    status: 'accepted',
-    isRecurring: false,
-    recurrenceDays: [],
-    instances: [],
-    expiresAt: getRelativeDateISO(1, '18:00'),
-  },
 
   'bk-emeka-proposed': {
     id: 'bk-emeka-proposed',
@@ -214,7 +199,7 @@ export function useMockBookings() {
     const stored = localStorage.getItem('mock_bookings');
     const version = localStorage.getItem('mock_bookings_version');
     
-    if (stored && version === 'v2') {
+    if (stored && version === 'v3') {
       try {
         setBookings(JSON.parse(stored));
       } catch {
@@ -225,7 +210,7 @@ export function useMockBookings() {
     } else {
       setBookings(INITIAL_BOOKINGS);
       localStorage.setItem('mock_bookings', JSON.stringify(INITIAL_BOOKINGS));
-      localStorage.setItem('mock_bookings_version', 'v2');
+      localStorage.setItem('mock_bookings_version', 'v3');
     }
     setIsLoaded(true);
 

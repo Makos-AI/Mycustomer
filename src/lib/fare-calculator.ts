@@ -1,14 +1,14 @@
 // Default market rates (Lagos)
-const BASE_CHARGE = 100; // NGN
-const PER_KM_RATE = 50;  // NGN
-const PER_MIN_RATE = 10; // NGN
+const BASE_CHARGE = 3000; // NGN minimum base
+const PER_KM_RATE = 120;  // NGN per km
+const PER_MIN_RATE = 25;  // NGN per minute
 
 export function calculateBaselineFare(distanceKm: number, durationMinutes: number): number {
-  if (!distanceKm && !durationMinutes) return 0;
+  if (!distanceKm && !durationMinutes) return 3000;
   
   const fare = BASE_CHARGE + (distanceKm * PER_KM_RATE) + (durationMinutes * PER_MIN_RATE);
-  // Round UP to nearest 50
-  return Math.ceil(fare / 50) * 50;
+  // Round UP to nearest 100
+  return Math.ceil(fare / 100) * 100;
 }
 
 export type Modifier = {
